@@ -1,0 +1,138 @@
+body{
+    margin: 0px;
+    padding: 0px;
+}
+
+h1{
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    color:white;
+    user-select: none;
+}
+
+h2{
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    color:white;
+}
+
+h6{
+    text-align: center;
+}
+
+.app {
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    user-select: none;
+}
+
+.header{
+    background-color: black;
+}
+
+.banner {
+    background-color: grey;
+    user-select: none;
+}
+
+.controller{
+    cursor: pointer;
+}
+
+.panel{
+    display:flex;
+    background-color: lightgrey;
+    padding: 10px;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.plugboard {
+    display: none;
+}
+
+.on {
+    background-color: yellow;
+}
+
+.rotors{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+
+}
+
+
+
+.rotor-btn:hover{
+    color: darkgray;
+}
+
+.rotor{
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.rotor-display{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: xx-large;
+    padding: 10px;
+}
+
+.rotor-controls{
+    visibility: hidden;
+    border: darkgray 1px solid;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    font-size: large
+}
+
+.light, .key{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px black solid;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    user-select: none;
+}
+
+.key {
+    box-shadow: grey 0px 4px;
+}
+
+.key:active{
+    box-shadow: grey 0px 2px;
+    transform: translate(0px, 2px);
+}
+
+.panel-row{
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    margin:auto;
+    /* justify-content: space-evenly; */
+}
+
+.plug-btn {
+    padding: 5px;
+}
+
+.connection-label{
+    color:darkgray;
+    text-align: center;
+}
+
+
