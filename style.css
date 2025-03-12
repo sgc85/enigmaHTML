@@ -29,6 +29,11 @@ h6{
     user-select: none;
 }
 
+.selectedRotorText{
+    text-align: center;
+    width: 3ch;
+}
+
 .header{
     background-color: black;
 }

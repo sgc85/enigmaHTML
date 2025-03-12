@@ -68,7 +68,23 @@ function handleKeyboardClick(event) {
         activeLight.classList.remove("on")
     }
 
+    //tick the rotors forward
+    currentRotorPositions[2] = (currentRotorPositions[2] + 1) % 26
+    //update the fast rotor
+    document.getElementById("rotor-text-" + 2).textContent = rotorList[2].connections[currentRotorPositions[2]]
 
+    if (currentRotorPositions[2] === 0){
+        currentRotorPositions[1] = (currentRotorPositions[1] + 1) % 26
+        document.getElementById("rotor-text-" + 1).textContent = rotorList[1].connections[currentRotorPositions[1]]
+        if (currentRotorPositions[1] === 0){
+            currentRotorPositions[0] = (currentRotorPositions[0] + 1) % 26
+            document.getElementById("rotor-text-" + 0).textContent = rotorList[0].connections[currentRotorPositions[0]]
+        }
+    }
+
+
+
+    //go through plugboard
     var key = event.target.innerHTML
     if (plugboardConnections[key]) {
         key = plugboardConnections[key]
@@ -129,65 +145,77 @@ function toggleRotors() {
 
 
 function buildRotors() {
-    const rotorsContainer = document.getElementById("rotors");
-    
-    
+    const rotors = document.getElementById("rotors");
+
+    //build reflector
+    const reflector = document.createElement("div")
+
     for (let i = 0; i < 3; i++) {
+        //create the rotor div into which all parts will be placed
         const rotor = document.createElement("div");
         rotor.className = "rotor";
-        
-        const rotorDisplay1 = document.createElement("div");
-        rotorDisplay1.className = "rotor-display";
-        
-        const upButton1 = document.createElement("div");
-        upButton1.className = "rotor-btn";
-        upButton1.textContent = "▲";
-        
-        const rotorText1 = document.createTextNode("A");
-        
-        const downButton1 = document.createElement("div");
-        downButton1.className = "rotor-btn";
-        downButton1.textContent = "▼";
-        
-        rotorDisplay1.appendChild(upButton1);
-        rotorDisplay1.appendChild(rotorText1);
-        rotorDisplay1.appendChild(downButton1);
-        
+
+        //rotor display will show the current state and buttons to shift this up and down
+        const rotorPositionDisplay = document.createElement("div");
+        rotorPositionDisplay.className = "rotor-display";
+
+        const nextRotorPositionButton = document.createElement("div");
+        nextRotorPositionButton.className = "rotor-btn";
+        nextRotorPositionButton.textContent = "▲";
+
+        const defaultRotorText = rotorList[i].connections[0]
+        const rotorText = document.createElement("div");
+        rotorText.id = "rotor-text-" + i
+        rotorText.textContent = defaultRotorText
+
+        const prevRotorPositionButton = document.createElement("div");
+        prevRotorPositionButton.className = "rotor-btn";
+        prevRotorPositionButton.textContent = "▼";
+
+        rotorPositionDisplay.appendChild(nextRotorPositionButton);
+        rotorPositionDisplay.appendChild(rotorText);
+        rotorPositionDisplay.appendChild(prevRotorPositionButton);
+
+        //Controls are naturally hidden and toggled on and off by botton
         const rotorControls = document.createElement("div");
         rotorControls.className = "rotor-controls";
-        
+
+        //Label containing rotor:
         const labelDiv = document.createElement("div");
         labelDiv.textContent = "Rotor:";
-        
-        const rotorDisplay2 = document.createElement("div");
-        rotorDisplay2.className = "rotor-display";
-        
-        const upButton2 = document.createElement("div");
-        upButton2.className = "rotor-btn";
-        upButton2.textContent = "▲";
-        upButton2.onclick = () => nextRotor(i)
-        
 
-        const defaultRotorName = rotorLookup[i]
-        const rotorText2 = document.createTextNode(defaultRotorName);
-        rotorText2.id = "rotor-name-" + i
-        
-        const downButton2 = document.createElement("div");
-        downButton2.className = "rotor-btn";
-        downButton2.textContent = "▼";
-        downButton2.onclick = () => prevRotor(i)
-        
-        rotorDisplay2.appendChild(upButton2);
-        rotorDisplay2.appendChild(rotorText2);
-        rotorDisplay2.appendChild(downButton2);
-        
+        //div will contain the current rotor being used and buttons to change it
+        const selectedRotorDisplay = document.createElement("div");
+        //looks the same as the display of current position so uses same class
+        selectedRotorDisplay.className = "rotor-display";
+
+        const nextRotorButton = document.createElement("div");
+        nextRotorButton.className = "rotor-btn";
+        nextRotorButton.textContent = "▲";
+        nextRotorButton.onclick = () => nextRotor(i)
+
+        const defaultRotorName = rotorList[i].name
+        const selectedRotorText = document.createElement("div");
+        selectedRotorText.classList.add("selectedRotorText")
+        selectedRotorText.id = "rotor-name-" + i
+        selectedRotorText.textContent = defaultRotorName
+
+        const prevRotorButton = document.createElement("div");
+        prevRotorButton.className = "rotor-btn";
+        prevRotorButton.textContent = "▼";
+        prevRotorButton.onclick = () => prevRotor(i)
+
+        selectedRotorDisplay.appendChild(nextRotorButton);
+        selectedRotorDisplay.appendChild(selectedRotorText);
+        selectedRotorDisplay.appendChild(prevRotorButton);
+
         rotorControls.appendChild(labelDiv);
-        rotorControls.appendChild(rotorDisplay2);
-        
-        rotor.appendChild(rotorDisplay1);
+        rotorControls.appendChild(selectedRotorDisplay);
+
+        rotor.appendChild(rotorPositionDisplay);
         rotor.appendChild(rotorControls);
-        
-        rotorsContainer.appendChild(rotor);
+
+        rotors.appendChild(rotor);
     }
 }
 
@@ -217,17 +245,44 @@ function buildPlugboard() {
 }
 
 
-function nextRotor(rotorNumber){
-    selectedRotorPositions[rotorNumber]++
-    console.log("rotor-name-" + rotorNumber)
-    const rotor = document.getElementById("rotor-name-" + rotorNumber )
-    console.log(rotor)
-    const newRotorName = rotorLookup[selectedRotorPositions[rotorNumber]]
-    rotor.nodeValue = newRotorName
+function nextRotor(rotorNumber) {
+    //checks to ensure it doesn't go into rotors that don't exist.
+    if (selectedRotorPositions[rotorNumber] < Object.keys(rotorList).length - 1) {
+        //move the rotor number on by one
+        let newRotorNumber = selectedRotorPositions[rotorNumber] + 1
+        //finds the name of the new rotor
+        const newRotorName = rotorList[newRotorNumber].name
+        //updates the text on the rotor text
+        document.getElementById("rotor-name-" + rotorNumber).textContent = newRotorName
+        //update the selected rotor position to the new position
+        selectedRotorPositions[rotorNumber] = newRotorNumber
+        //update rotor text
+        //reset position back to 0
+        currentRotorPositions[rotorNumber] = 0
+        //find and update the matching text for the rotor position
+        document.getElementById("rotor-text-" + rotorNumber).textContent = rotorList[newRotorNumber].connections[0]
+
+    }
 }
 
-function prevRotor(rotorNumber){
-    selectedRotorPositions[rotorNumber]++
+//opposite of next rotor function
+function prevRotor(rotorNumber) {
+    if (selectedRotorPositions[rotorNumber] > 0) {
+        //move the rotor number on by one
+        let newRotorNumber = selectedRotorPositions[rotorNumber] - 1
+        //finds the name of the new rotor
+        const newRotorName = rotorList[newRotorNumber].name
+        //updates the text on the rotor text
+        document.getElementById("rotor-name-" + rotorNumber).textContent = newRotorName
+        //update the selected rotor position to the new position
+        selectedRotorPositions[rotorNumber] = newRotorNumber
+        //update rotor text
+        //reset position back to 0
+        currentRotorPositions[rotorNumber] = 0
+        //find and update the matching text for the rotor position
+        document.getElementById("rotor-text-" + rotorNumber).textContent = rotorList[newRotorNumber].connections[0]
+
+    }
 }
 
 //program code
@@ -236,6 +291,8 @@ const keyboardLayout = [
     ["A", "S", "D", "F", "G", "H", "J", "K"],
     ["P", "Y", "X", "C", "V", "B", "N", "M", "L"]
 ]
+
+//QWERTZUIOASDFGHJKPYXCVBNML
 
 
 const plugboardConnections = {
@@ -272,27 +329,22 @@ let connecting = false
 let connectionCount = 0
 let from = null
 
-const allRotors = {
-    I: {},
-    II: {},
-    III: {},
-    IV: {},
-    V: {}
-}
-
 
 //stores which rotor has been picked for each rotor - NOT the position of the rotor
-const selectedRotorPositions = [0,0,0]
+const selectedRotorPositions = [0, 1, 2]
+//stores position of current rotors - to be ticked round
+const currentRotorPositions = [0, 0, 0]
 
-const rotorLookup = {
-    0:"I",
-    1:"II",
-    2:"III",
-    3:"IV",
-    4:"V"
+const rotorList = {
+    0: { name: "I", connections: "JGDQOXUSCAMIFRVTPNEWKBLZYH" },
+    1: { name: "II", connections: "NTZPSFBOKMWRCJDIVLAEYUXHGQ" },
+    2: { name: "III", connections: "JVIUBHTCDYAKEQZPOSGXNRMWFL" },
+    3: { name: "IV", connections: "QYHOGNECVPUZTFDJAXWMKISRBL" },
+    4: { name: "V", connections: "QWERTZUIOASDFGHJKPYXCVBNML" }
 }
 
-const selectedRotors = {
+
+const reflector = {
 
 }
 
