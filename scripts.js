@@ -83,6 +83,10 @@ function usePlugboard(letter) {
     return plugboardConnections[letter] || letter;
 }
 
+
+
+asdadawd
+
 function useRotor(rotorNumber, letter, reverse = false) {
     let rotorWiring = rotorList[rotorNumber].connections;
     let rotorOffset = currentRotorPositions[rotorNumber];
@@ -320,7 +324,7 @@ function buildPlugboard() {
 
 function moveRotorUp(rotorNumber){
     currentRotorPositions[rotorNumber]++;
-    
+
 }
 
 function nextRotor(rotorNumber) {
