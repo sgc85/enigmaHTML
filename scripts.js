@@ -10,11 +10,9 @@ function togglePlugboard() {
     }
 }
 
-
 function handlePlugboardClick(event) {
     //get the key that has been pressed
-    const key = event.target.innerHTML.toUpperCase()
-
+    const key = event.target.innerHTML
     //remove connections if they already exist on the button clicked
     if (plugboardConnections[key]) { //values are default to null which will be false here
         //take away from the connection count
@@ -58,43 +56,89 @@ function handlePlugboardClick(event) {
             connectionCount++
         }
     }
-    console.log(plugboardConnections)
+}
+
+function stepRotors() {
+    // Always step the fast rotor
+    currentRotorPositions[2] = (currentRotorPositions[2] + 1) % 26;
+    document.getElementById("rotor-text-2").textContent = alphabet[currentRotorPositions[2]];
+
+    // If middle rotor is at notch before moving, slow rotor should step
+    let middleAtNotch = currentRotorPositions[1] === rotorList[1].notch;
+
+    // Check double-stepping condition
+    if (middleAtNotch || currentRotorPositions[2] === rotorList[2].notch) {
+        currentRotorPositions[1] = (currentRotorPositions[1] + 1) % 26;
+        document.getElementById("rotor-text-1").textContent = alphabet[currentRotorPositions[1]];
+    }
+
+    // If middle rotor was at notch, slow rotor steps
+    if (middleAtNotch) {
+        currentRotorPositions[0] = (currentRotorPositions[0] + 1) % 26;
+        document.getElementById("rotor-text-0").textContent = alphabet[currentRotorPositions[0]];
+    }
+}
+
+function usePlugboard(letter) {
+    return plugboardConnections[letter] || letter;
+}
+
+function useRotor(rotorNumber, letter, reverse = false) {
+    let rotorWiring = rotorList[rotorNumber].connections;
+    let rotorOffset = currentRotorPositions[rotorNumber];
+    let letterIndex = alphabet.indexOf(letter);
+
+    if (reverse) {
+        // Find the letter in the rotor's output mapping
+        let adjustedIndex = (letterIndex - rotorOffset + 26) % 26;
+        letter = alphabet[rotorWiring.indexOf(alphabet[adjustedIndex])];
+        console.log("way back", rotorNumber,rotorOffset , rotorWiring, letter)
+    } else {
+        // Move forward through the rotor
+        let adjustedIndex = (letterIndex + rotorOffset) % 26;
+        letter = rotorWiring[adjustedIndex];
+        console.log("way through", rotorNumber,rotorOffset, rotorWiring, letter)
+    }
+    return letter;
+}
+
+function useReflector(reflectorNumber, letter) {
+    let reflectorWiring = reflectorList[reflectorNumber].connections;
+    let letterIndex = alphabet.indexOf(letter);
+    return reflectorWiring[letterIndex];
 }
 
 function handleKeyboardClick(event) {
-    //turn off currently active light
+    //TURN OFF ACTIVE LIGHT
     var activeLight = document.querySelector(".on")
+
     if (activeLight) {
         activeLight.classList.remove("on")
     }
 
-    //tick the rotors forward
-    currentRotorPositions[2] = (currentRotorPositions[2] + 1) % 26
-    //update the fast rotor
-    document.getElementById("rotor-text-" + 2).textContent = rotorList[2].connections[currentRotorPositions[2]]
-
-    if (currentRotorPositions[2] === 0){
-        currentRotorPositions[1] = (currentRotorPositions[1] + 1) % 26
-        document.getElementById("rotor-text-" + 1).textContent = rotorList[1].connections[currentRotorPositions[1]]
-        if (currentRotorPositions[1] === 0){
-            currentRotorPositions[0] = (currentRotorPositions[0] + 1) % 26
-            document.getElementById("rotor-text-" + 0).textContent = rotorList[0].connections[currentRotorPositions[0]]
-        }
+    //STEP ROTORS
+    stepRotors()
+    //GET KEY PRESSED
+    var letter = event.target.innerHTML
+    //SEND THROUGH PLUGBOARD
+    letter = usePlugboard(letter)
+    //SEND THROUGH ROTORS
+    for (let r = 2; r >= 0; r--) {
+        letter = useRotor(r, letter)
     }
-
-
-
-    //go through plugboard
-    var key = event.target.innerHTML
-    if (plugboardConnections[key]) {
-        key = plugboardConnections[key]
+    //SEND THROUGH REFLECTOR
+    letter = useReflector(0, letter)
+    //SEND BACK THROUGH ROTORS
+    for (let r = 0; r < 3; r++) {
+        letter = useRotor(r, letter, true)
     }
+    //SEND THROUGH PLUGBOARD
+    letter = usePlugboard(letter)
 
-    activeLight = document.getElementById("light-" + key)
+    //SEND TO LIGHTBOARD
+    activeLight = document.getElementById("light-" + letter)
     activeLight.classList.add("on")
-
 }
-
 
 function buildLightboard() {
     const lightboard = document.getElementById("lightboard")
@@ -141,14 +185,44 @@ function toggleRotors() {
     });
 }
 
+function nextReflector() {
 
+}
 
+function prevReflector() {
+
+}
 
 function buildRotors() {
     const rotors = document.getElementById("rotors");
 
     //build reflector
     const reflector = document.createElement("div")
+
+    //looks the same as the display of current position so uses same class
+    reflector.className = "rotor-controls";
+
+    const nextReflectorButton = document.createElement("div");
+    nextReflectorButton.className = "rotor-btn";
+    nextReflectorButton.textContent = "▲";
+    nextReflectorButton.onclick = () => nextReflector()
+
+    const defaultReflectorName = reflectorList[0].name
+    const selectedReflectorText = document.createElement("div");
+    selectedReflectorText.classList.add("selectedRotorText")
+    selectedReflectorText.id = "reflector-name"
+    selectedReflectorText.textContent = defaultReflectorName
+
+    const prevReflectorButton = document.createElement("div");
+    prevReflectorButton.className = "rotor-btn";
+    prevReflectorButton.textContent = "▼";
+    prevReflectorButton.onclick = () => prevReflector()
+
+    reflector.appendChild(nextReflectorButton);
+    reflector.appendChild(selectedReflectorText);
+    reflector.appendChild(prevReflectorButton);
+
+    rotors.appendChild(reflector)
 
     for (let i = 0; i < 3; i++) {
         //create the rotor div into which all parts will be placed
@@ -163,7 +237,7 @@ function buildRotors() {
         nextRotorPositionButton.className = "rotor-btn";
         nextRotorPositionButton.textContent = "▲";
 
-        const defaultRotorText = rotorList[i].connections[0]
+        const defaultRotorText = alphabet[currentRotorPositions[i]]
         const rotorText = document.createElement("div");
         rotorText.id = "rotor-text-" + i
         rotorText.textContent = defaultRotorText
@@ -214,7 +288,6 @@ function buildRotors() {
 
         rotor.appendChild(rotorPositionDisplay);
         rotor.appendChild(rotorControls);
-
         rotors.appendChild(rotor);
     }
 }
@@ -238,12 +311,17 @@ function buildPlugboard() {
 
             newKey.appendChild(plugButton)
             newKey.appendChild(connectionLabel)
+
             newRow.appendChild(newKey)
         }
         plugboard.appendChild(newRow)
     }
 }
 
+function moveRotorUp(rotorNumber){
+    currentRotorPositions[rotorNumber]++;
+    
+}
 
 function nextRotor(rotorNumber) {
     //checks to ensure it doesn't go into rotors that don't exist.
@@ -292,9 +370,6 @@ const keyboardLayout = [
     ["P", "Y", "X", "C", "V", "B", "N", "M", "L"]
 ]
 
-//QWERTZUIOASDFGHJKPYXCVBNML
-
-
 const plugboardConnections = {
     A: null,
     B: null,
@@ -324,28 +399,31 @@ const plugboardConnections = {
     Z: null,
 }
 
-
-let connecting = false
+//all to do with plugboard
 let connectionCount = 0
+let connecting = false
 let from = null
-
 
 //stores which rotor has been picked for each rotor - NOT the position of the rotor
 const selectedRotorPositions = [0, 1, 2]
 //stores position of current rotors - to be ticked round
 const currentRotorPositions = [0, 0, 0]
 
+
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 const rotorList = {
-    0: { name: "I", connections: "JGDQOXUSCAMIFRVTPNEWKBLZYH" },
-    1: { name: "II", connections: "NTZPSFBOKMWRCJDIVLAEYUXHGQ" },
-    2: { name: "III", connections: "JVIUBHTCDYAKEQZPOSGXNRMWFL" },
-    3: { name: "IV", connections: "QYHOGNECVPUZTFDJAXWMKISRBL" },
-    4: { name: "V", connections: "QWERTZUIOASDFGHJKPYXCVBNML" }
+    0: { name: "I", connections: "JGDQOXUSCAMIFRVTPNEWKBLZYH", notch: alphabet.indexOf("Q") + 1 },
+    1: { name: "II", connections: "NTZPSFBOKMWRCJDIVLAEYUXHGQ", notch: alphabet.indexOf("E") + 1},
+    2: { name: "III", connections: "JVIUBHTCDYAKEQZPOSGXNRMWFL", notch: alphabet.indexOf("V") + 1 },
+    3: { name: "IV", connections: "QYHOGNECVPUZTFDJAXWMKISRBL", notch: alphabet.indexOf("J") + 1},
+    4: { name: "V", connections: "QWERTZUIOASDFGHJKPYXCVBNML", notch: (alphabet.indexOf("Z") + 1) % 26 }
 }
 
-
-const reflector = {
-
+const reflectorList = {
+    0: { name: "A", connections: "EJMZALYXVBWFCRQUONTSPIKHGD" },
+    1: { name: "B", connections: "YRUHQSLDPXNGOKMIEBFZCWVJAT" },
+    2: { name: "C", connections: "FVPJIAOYEDRZXWGCTKUQSBNMHL" }
 }
 
 buildPlugboard()
